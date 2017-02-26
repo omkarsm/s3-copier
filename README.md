@@ -1,37 +1,162 @@
-## Welcome to GitHub Pages
+# s3-copier
 
-You can use the [editor on GitHub](https://github.com/omkarsm/s3-copier/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+S3 Copier module for copying contents between S3 buckets. 
+Content can be multiple files/directory/bucket to be copied.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
 
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+## Installation
 
 ```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+  npm install s3-copier
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+## Usage
 
-### Jekyll Themes
+### Initiating S3 Copier module 
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/omkarsm/s3-copier/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+```js
 
-### Support or Contact
+	var S3_Copier = require("s3-copier");
 
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+	var param = {
+		region: "ANY REGION", 					//	AWS region
+		secretAccessKey: "*****************", 	//	AWS secret access key
+		accessKeyId: "*********" 				//	AWS access key ID
+	};
+
+	var options = {
+		PartSize: 1024 * 1024 * 100, 			//	Optional: Defaults to 100 MBytes
+		PartConcurrency: 10, 					//	Optional: Defaults to 10 parallel/async operations
+		RetryCount: 3, 							//	Optional: Defaults to 3 retries on failure
+		RetryDelay: 2000, 						//	Optional: Defaults to 2 seconds retry delay
+		ExpireDuration: 12 * 60 * 60 * 1000,	//	Optional: Defaults to 12 Hours time for expiring incomplete mulipart upload
+		SingleConcurrency: 40, 					//	Optional: Defaults to 40 parallel/async copy operations for data < 5 GBytes
+		MultipartConcurrency: 10 				//	Optional: Defaults to 40 parallel/async copy operations for data > 5 GBytes
+	}
+
+	var s3Copier = new S3_Copier(param, options);
+
+```
+Please refer [AWS-Documentation](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#constructor-property) for more **param** related options.
+
+
+### Performing directory copy
+
+```js
+
+s3Copier.copy({
+	Source: {
+		Bucket: "SOURCE_AWS_BUCKET_NAME",
+		Key: "Bar/Foo"
+	},
+	Destination: {
+		Bucket: "DESTINATION_AWS_BUCKET_NAME",
+		Prefix: "Bar/"
+	}
+}, function(err, data) {
+	console.log(err ? err : data);
+});
+
+```
+
+### Performing contents of directory copy
+
+```js
+
+s3Copier.copy({
+	Source: {
+		Bucket: "SOURCE_AWS_BUCKET_NAME",
+		Key: "Bar/Foo/"
+	},
+	Destination: {
+		Bucket: "DESTINATION_AWS_BUCKET_NAME",
+		Prefix: "Bar/"
+	}
+}, function(err, data) {
+	console.log(err ? err : data);
+});
+
+```
+
+
+### Performing file copy
+
+```js
+
+s3Copier.copy({
+	Source: {
+		Bucket: "SOURCE_AWS_BUCKET_NAME",
+		Key: "Foo/Bar/hello.txt"
+	},
+	Destination: {
+		Bucket: "DESTINATION_AWS_BUCKET_NAME",
+		Prefix: "Bar/"
+	}
+}, function(err, data) {
+	console.log(err ? err : data);
+});
+
+```
+
+
+### Performing file copy by renaming on destination
+
+```js
+
+s3Copier.copy({
+	Source: {
+		Bucket: "SOURCE_AWS_BUCKET_NAME",
+		Key: "Foo/Bar/hello.txt"
+	},
+	Destination: {
+		Bucket: "DESTINATION_AWS_BUCKET_NAME",
+		Key: "Bar/world.txt"
+	}
+}, function(err, data) {
+	console.log(err ? err : data);
+});
+
+```
+
+
+### Performing multiple file/directory copy operations
+
+```js
+
+s3Copier.copy([{
+	Source: {
+		Bucket: "SOURCE_AWS_BUCKET_NAME",
+		Key: "Foo/Bar/"
+	},
+	Destination: {
+		Bucket: "DESTINATION_AWS_BUCKET_NAME",
+		Prefix: "Foo/"
+	}
+}, {
+	Source: {
+		Bucket: "SOURCE_AWS_BUCKET_NAME",
+		Key: "Foo/Bar/hello.txt"
+	},
+	Destination: {
+		Bucket: "DESTINATION_AWS_BUCKET_NAME",
+		Key: "Bar/world.txt"
+	}
+}, {
+	Source: {
+		Bucket: "SOURCE_AWS_BUCKET_NAME",
+		Key: "Foo/Bar/hello.txt"
+	},
+	Destination: {
+		Bucket: "DESTINATION_AWS_BUCKET_NAME",
+		Prefix: "Bar/"
+	}
+}], function(err, data) {
+	console.log(err ? err : data);
+});
+
+```
+
+
+##License
+
+MIT © [Omkar Mujumdar](http://github.com/omkarsm)
