@@ -19,19 +19,19 @@ Content can be multiple files/directory/bucket to be copied.
 	var S3_Copier = require("s3-copier");
 
 	var param = {
-		region: "ANY REGION",					//	AWS region
+		region: "ANY REGION",			//	AWS region
 		secretAccessKey: "*****************",	//	AWS secret access key
-		accessKeyId: "*********"				//	AWS access key ID
+		accessKeyId: "*********"		//	AWS access key ID
 	};
 
 	var options = {
-		PartSize: 1024 * 1024 * 100,			//	Optional: Defaults to 100 MBytes
-		PartConcurrency: 10,					//	Optional: Defaults to 10 parallel/async operations
-		RetryCount: 3,							//	Optional: Defaults to 3 retries on failure
-		RetryDelay: 2000,						//	Optional: Defaults to 2 seconds retry delay
+		PartSize: 1024 * 1024 * 100,		//	Optional: Defaults to 100 MBytes
+		PartConcurrency: 10,			//	Optional: Defaults to 10 parallel/async operations
+		RetryCount: 3,				//	Optional: Defaults to 3 retries on failure
+		RetryDelay: 2000,			//	Optional: Defaults to 2 seconds retry delay
 		ExpireDuration: 12 * 60 * 60 * 1000,	//	Optional: Defaults to 12 Hours time for expiring incomplete mulipart upload
-		SingleConcurrency: 40,					//	Optional: Defaults to 40 parallel/async copy operations for data < 5 GBytes
-		MultipartConcurrency: 10				//	Optional: Defaults to 10 parallel/async copy operations for data > 5 GBytes
+		SingleConcurrency: 40,			//	Optional: Defaults to 40 parallel/async copy operations for data < 5 GBytes
+		MultipartConcurrency: 10		//	Optional: Defaults to 10 parallel/async copy operations for data > 5 GBytes
 	}
 
 	var s3Copier = new S3_Copier(param, options);	//	S3_Copier(param[, options])
