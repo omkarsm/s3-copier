@@ -1,6 +1,6 @@
 {
   "name": "s3-copier",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "S3 Copier is a module used for copy/transfer contents between S3 buckets.",
   "main": "s3.js",
   "scripts": {
