@@ -9,6 +9,8 @@ var S3Copier = function(awsConfig, options) {
 	}
 
 	var limit = JSON.parse(JSON.stringify(config.limit));
+	var verbose;
+
 	if (isDataValid(options, "object")) {
 		limit.part.max_size = options.PartSize || config.limit.part.max_size;
 		limit.part.parallel = options.PartConcurrency || config.limit.part.parallel;
@@ -17,6 +19,8 @@ var S3Copier = function(awsConfig, options) {
 		limit.expires = options.ExpireDuration || config.limit.expires;
 		limit.parallel.single = options.SingleConcurrency || config.limit.parallel.single;
 		limit.parallel.multipart = options.MultipartConcurrency || config.limit.parallel.multipart;
+
+		verbose = options.Verbose != undefined ? options.Verbose : config.verbose;
 	}
 
 	awsConfig.apiVersion = '2006-03-01';
@@ -24,7 +28,7 @@ var S3Copier = function(awsConfig, options) {
 
 	function log(msg) {
 		// Add logger
-		if (config.verbose) {
+		if (verbose) {
 			console.log(msg)
 		}
 	}
