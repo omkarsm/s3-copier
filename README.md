@@ -32,7 +32,7 @@ Content can be multiple files/directory/bucket to be copied.
 		ExpireDuration: 12 * 60 * 60 * 1000,	//	Optional: Defaults to 12 Hours time for expiring incomplete mulipart upload
 		SingleConcurrency: 40,			//	Optional: Defaults to 40 parallel/async copy operations for data < 5 GBytes
 		MultipartConcurrency: 10		//	Optional: Defaults to 10 parallel/async copy operations for data > 5 GBytes
-		Verbose: true		//	Optional: Defaults to show logs
+		Verbose: true				//	Optional: Defaults to show logs
 	}
 
 	var s3Copier = new S3_Copier(param, options);	//	S3_Copier(param[, options])
