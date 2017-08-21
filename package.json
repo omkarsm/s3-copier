@@ -12,10 +12,17 @@
   },
   "keywords": [
     "s3-copier",
+    "s3 copier",
+    "s3-copy",
+    "s3 copy",
     "s3",
     "copier",
+    "copy",
     "bucket",
-    "copy"
+    "bucket-copier",
+    "bucket copier",
+    "bucket-copy"
+    "bucket copy"
   ],
   "author": "Omkar Mujumdar",
   "license": "MIT",
