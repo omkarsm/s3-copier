@@ -80,6 +80,8 @@ var S3Copier = function(awsConfig, options) {
 	}
 
 	function getKeyPath(srcPath, keyPath) {
+		if(srcPath=="/")
+		return keyPath;
 		var folders = srcPath.split("/");
 		return folders[(folders.length - 1)] + keyPath.substr(srcPath.length);
 	}
@@ -97,7 +99,10 @@ var S3Copier = function(awsConfig, options) {
 		if (typeof(cb) != "function") {
 			throw "callback is not specified"
 		}
-
+		if(lParam.Prefix=="/"){
+			lParam.Prefix="";
+		}
+		
 		var finalSet = [],
 			_list = function(nxtMarker) {
 				var param = {
@@ -140,7 +145,7 @@ var S3Copier = function(awsConfig, options) {
 					}
 					s3.copyObject({
 						Bucket: csParam.Destination.Bucket,
-						CopySource: csParam.Source.Bucket + "/" + csParam.Source.Key,
+						CopySource: csParam.Source.Bucket + "/" + (csParam.Source.Key=="/"?"":csParam.Source.Key),
 						Key: csParam.Destination.Key
 					}, function(err, coData) {
 						if (err) {
@@ -224,7 +229,7 @@ var S3Copier = function(awsConfig, options) {
 							s3.uploadPartCopy({
 								Bucket: cmParam.Destination.Bucket,
 								Key: cmParam.Destination.Key,
-								CopySource: cmParam.Source.Bucket + "/" + cmParam.Source.Key,
+								CopySource: cmParam.Source.Bucket + "/" + (cmParam.Source.Key=="/"?"":cmParam.Source.Key),
 								CopySourceRange: 'bytes=' + range,
 								PartNumber: pNum + 1,
 								UploadId: cmuData.UploadId
