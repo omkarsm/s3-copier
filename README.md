@@ -158,6 +158,24 @@ s3Copier.copy([{
 ```
 
 
+### Performing bucket to bucket copy operations
+
+```js
+
+s3Copier.copy({
+	Source: {
+		Bucket: "SOURCE_AWS_BUCKET_NAME",
+		Key: "/"
+	},
+	Destination: {
+		Bucket: "DESTINATION_AWS_BUCKET_NAME"
+	}
+}, function(err, data) {
+	console.log(err ? err : data);
+});
+
+```
+
 ## License
 
 MIT © [Omkar Mujumdar](http://github.com/omkarsm)
