@@ -1,5 +1,8 @@
 name: CI
 
+# This workflow runs on:
+# - Pull requests targeting main, master, or develop
+# - Pushes to main, master, or develop branches
 on:
   push:
     branches: [ main, master, develop ]
