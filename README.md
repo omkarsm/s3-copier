@@ -6,7 +6,7 @@ Content can be multiple files/directory/bucket to be copied.
 ## Version 2.0 - Breaking Changes
 
 Version 2.0 has been completely rewritten to use:
-- **Node.js 20+ LTS** (minimum required version)
+- **Node.js 24+ LTS** (minimum required version - latest LTS 'Krypton')
 - **AWS SDK v3** (`@aws-sdk/client-s3`)
 - **Modern JavaScript** (ES6+, async/await)
 - **No external dependencies** (removed `async` library)
@@ -25,7 +25,7 @@ npm install s3-copier
 ```
 
 **Requirements:**
-- Node.js >= 20.0.0
+- Node.js >= 24.0.0 (LTS 'Krypton')
 - AWS credentials with appropriate S3 permissions
 
 ## Usage
@@ -271,7 +271,7 @@ Your AWS credentials need the following S3 permissions:
 ## Changelog
 
 ### v2.0.0 (Breaking Changes)
-- Upgraded to Node.js 20+ LTS
+- Upgraded to Node.js 24+ LTS (latest 'Krypton' release)
 - Migrated to AWS SDK v3 (`@aws-sdk/client-s3`)
 - Refactored to use async/await instead of callbacks
 - Removed dependency on `async` library
