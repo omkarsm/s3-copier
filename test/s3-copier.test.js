@@ -419,6 +419,41 @@ describe('S3Copier', () => {
 			await expect(s3Copier.copy(null)).rejects.toThrow('Invalid copy param');
 			await expect(s3Copier.copy({})).rejects.toThrow('Invalid copy param');
 		});
+
+		test('should support legacy callback API for backward compatibility', (done) => {
+			mockSend
+				.mockResolvedValueOnce({ // list
+					Contents: [{ Key: 'file.txt', Size: 1024 }],
+					IsTruncated: false
+				})
+				.mockRejectedValueOnce(new Error('NotFound')) // isItemCopied
+				.mockResolvedValueOnce({}) // copyObject
+				.mockResolvedValueOnce({ ContentLength: 1024 }); // validation
+
+			// Use callback API (v1.x compatibility)
+			s3Copier.copy({
+				Source: { Bucket: 'src', Key: 'file.txt' },
+				Destination: { Bucket: 'dest', Prefix: 'backup/' }
+			}, function(err, data) {
+				expect(err).toBeNull();
+				expect(data).toBe('Copy operation is completed');
+				done();
+			});
+		});
+
+		test('should handle errors in legacy callback API', (done) => {
+			mockSend.mockRejectedValueOnce(new Error('S3 Error'));
+
+			s3Copier.copy({
+				Source: { Bucket: 'src', Key: 'file.txt' },
+				Destination: { Bucket: 'dest', Prefix: 'backup/' }
+			}, function(err, data) {
+				expect(err).toBeDefined();
+				expect(err.message).toBe('S3 Error');
+				expect(data).toBeUndefined();
+				done();
+			});
+		});
 	});
 
 	describe('parallelLimit', () => {

@@ -424,6 +424,7 @@ class S3Copier {
 
 	/**
 	 * Copy files, directories, or entire buckets between S3 locations
+	 * Supports both callback and Promise-based APIs for backward compatibility
 	 * @param {Object|Array} cParam - Copy parameter(s). Can be single object or array of objects
 	 * @param {Object} cParam.Source - Source configuration
 	 * @param {string} cParam.Source.Bucket - Source bucket name
@@ -432,13 +433,24 @@ class S3Copier {
 	 * @param {string} cParam.Destination.Bucket - Destination bucket name
 	 * @param {string} [cParam.Destination.Prefix] - Destination prefix for multiple files
 	 * @param {string} [cParam.Destination.Key] - Destination key for single file/rename
-	 * @returns {Promise<string>} Success message
+	 * @param {Function} [callback] - Optional callback function(err, result) for backward compatibility
+	 * @returns {Promise<string>} Success message (when used without callback)
 	 * @throws {Error} When parameters are invalid
 	 * @example
-	 * // Copy single file
-	 * await s3Copier.copy({
+	 * // Modern Promise-based API (v2.0+)
+	 * const result = await s3Copier.copy({
 	 *   Source: { Bucket: 'source-bucket', Key: 'file.txt' },
 	 *   Destination: { Bucket: 'dest-bucket', Prefix: 'backup/' }
+	 * });
+	 *
+	 * @example
+	 * // Legacy callback API (v1.x compatibility)
+	 * s3Copier.copy({
+	 *   Source: { Bucket: 'source-bucket', Key: 'file.txt' },
+	 *   Destination: { Bucket: 'dest-bucket', Prefix: 'backup/' }
+	 * }, function(err, data) {
+	 *   if (err) console.error(err);
+	 *   else console.log(data);
 	 * });
 	 *
 	 * @example
@@ -448,98 +460,115 @@ class S3Copier {
 	 *   Destination: { Bucket: 'dest-bucket' }
 	 * });
 	 */
-	async copy(cParam) {
-		let copyArr = [];
+	copy(cParam, callback) {
+		// Backward compatibility: detect if callback is provided
+		const isCallbackMode = typeof callback === 'function';
 
-		if (!this.isDataValid(cParam, 'object')) {
-			throw new Error('Invalid copy param');
-		}
+		// Wrap the async implementation
+		const executeAsync = async () => {
+			let copyArr = [];
 
-		if (Array.isArray(cParam)) {
-			for (let i = 0; i < cParam.length; i++) {
-				if (!this.isDataValid(cParam[i].Source, 'object') ||
-				    !this.isDataValid(cParam[i].Destination, 'object') ||
-				    !this.isDataValid(cParam[i].Source.Bucket, 'string', true) ||
-				    !this.isDataValid(cParam[i].Source.Key, 'string', true) ||
-				    !this.isDataValid(cParam[i].Destination.Bucket, 'string', true)) {
-					throw new Error('Invalid copy param');
-				}
-			}
-			copyArr = cParam;
-		} else {
-			if (!this.isDataValid(cParam.Source, 'object') ||
-			    !this.isDataValid(cParam.Destination, 'object') ||
-			    !this.isDataValid(cParam.Source.Bucket, 'string', true) ||
-			    !this.isDataValid(cParam.Source.Key, 'string', true) ||
-			    !this.isDataValid(cParam.Destination.Bucket, 'string', true)) {
+			if (!this.isDataValid(cParam, 'object')) {
 				throw new Error('Invalid copy param');
 			}
-			copyArr.push(cParam);
-		}
 
-		const copier = {
-			multi_part: [],
-			single: []
+			if (Array.isArray(cParam)) {
+				for (let i = 0; i < cParam.length; i++) {
+					if (!this.isDataValid(cParam[i].Source, 'object') ||
+					    !this.isDataValid(cParam[i].Destination, 'object') ||
+					    !this.isDataValid(cParam[i].Source.Bucket, 'string', true) ||
+					    !this.isDataValid(cParam[i].Source.Key, 'string', true) ||
+					    !this.isDataValid(cParam[i].Destination.Bucket, 'string', true)) {
+						throw new Error('Invalid copy param');
+					}
+				}
+				copyArr = cParam;
+			} else {
+				if (!this.isDataValid(cParam.Source, 'object') ||
+				    !this.isDataValid(cParam.Destination, 'object') ||
+				    !this.isDataValid(cParam.Source.Bucket, 'string', true) ||
+				    !this.isDataValid(cParam.Source.Key, 'string', true) ||
+				    !this.isDataValid(cParam.Destination.Bucket, 'string', true)) {
+					throw new Error('Invalid copy param');
+				}
+				copyArr.push(cParam);
+			}
+
+			const copier = {
+				multi_part: [],
+				single: []
+			};
+
+			// List all source files
+			for (const item of copyArr) {
+				const lData = await this.list({
+					Bucket: item.Source.Bucket,
+					Prefix: item.Source.Key
+				});
+
+				lData.forEach(lItem => {
+					const copyItem = {
+						Source: {
+							Bucket: item.Source.Bucket,
+							Key: lItem.Key
+						},
+						Destination: {
+							Bucket: item.Destination.Bucket,
+							Key: typeof item.Destination.Key === 'string'
+								? item.Destination.Key
+								: ((typeof item.Destination.Prefix === 'string' ? item.Destination.Prefix : '') +
+								   this.getKeyPath(item.Source.Key, lItem.Key))
+						},
+						Size: lItem.Size
+					};
+
+					if (lItem.Size >= config.limit.aws_size) {
+						copier.multi_part.push(copyItem);
+					} else {
+						copier.single.push(copyItem);
+					}
+				});
+			}
+
+			this.log(`${copier.single.length + copier.multi_part.length} files are queued for copy`);
+
+			// Copy single files with concurrency limit
+			if (copier.single.length > 0) {
+				await this.parallelLimit(
+					copier.single,
+					this.limit.parallel.single,
+					async (cpItem) => {
+						const csData = await this.copySingle(cpItem);
+						this.log(csData);
+					}
+				);
+			}
+
+			// Copy multipart files with concurrency limit
+			if (copier.multi_part.length > 0) {
+				await this.parallelLimit(
+					copier.multi_part,
+					this.limit.parallel.multipart,
+					async (cpItem) => {
+						const cmData = await this.copyMultipart(cpItem);
+						this.log(cmData);
+					}
+				);
+			}
+
+			return 'Copy operation is completed';
 		};
 
-		// List all source files
-		for (const item of copyArr) {
-			const lData = await this.list({
-				Bucket: item.Source.Bucket,
-				Prefix: item.Source.Key
-			});
-
-			lData.forEach(lItem => {
-				const copyItem = {
-					Source: {
-						Bucket: item.Source.Bucket,
-						Key: lItem.Key
-					},
-					Destination: {
-						Bucket: item.Destination.Bucket,
-						Key: typeof item.Destination.Key === 'string'
-							? item.Destination.Key
-							: ((typeof item.Destination.Prefix === 'string' ? item.Destination.Prefix : '') +
-							   this.getKeyPath(item.Source.Key, lItem.Key))
-					},
-					Size: lItem.Size
-				};
-
-				if (lItem.Size >= config.limit.aws_size) {
-					copier.multi_part.push(copyItem);
-				} else {
-					copier.single.push(copyItem);
-				}
-			});
+		// Execute based on API style (callback or Promise)
+		if (isCallbackMode) {
+			// Legacy callback API (v1.x compatibility)
+			executeAsync()
+				.then(result => callback(null, result))
+				.catch(err => callback(err));
+		} else {
+			// Modern Promise API (v2.0+)
+			return executeAsync();
 		}
-
-		this.log(`${copier.single.length + copier.multi_part.length} files are queued for copy`);
-
-		// Copy single files with concurrency limit
-		if (copier.single.length > 0) {
-			await this.parallelLimit(
-				copier.single,
-				this.limit.parallel.single,
-				async (cpItem) => {
-					const csData = await this.copySingle(cpItem);
-					this.log(csData);
-				}
-			);
-		}
-
-		// Copy multipart files with concurrency limit
-		if (copier.multi_part.length > 0) {
-			await this.parallelLimit(
-				copier.multi_part,
-				this.limit.parallel.multipart,
-				async (cpItem) => {
-					const cmData = await this.copyMultipart(cpItem);
-					this.log(cmData);
-				}
-			);
-		}
-
-		return 'Copy operation is completed';
 	}
 }
 
