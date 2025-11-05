@@ -12,7 +12,28 @@ const {
 } = require('@aws-sdk/client-s3');
 const config = require('./config.js');
 
+/**
+ * S3Copier class for copying files and directories between S3 buckets
+ * @class
+ */
 class S3Copier {
+	/**
+	 * Create an S3Copier instance
+	 * @param {Object} awsConfig - AWS configuration object
+	 * @param {string} awsConfig.region - AWS region (e.g., 'us-east-1')
+	 * @param {string} awsConfig.accessKeyId - AWS access key ID
+	 * @param {string} awsConfig.secretAccessKey - AWS secret access key
+	 * @param {Object} [options={}] - Optional configuration parameters
+	 * @param {number} [options.PartSize] - Part size for multipart uploads (default: 100MB)
+	 * @param {number} [options.PartConcurrency] - Number of parts to upload in parallel (default: 10)
+	 * @param {number} [options.RetryCount] - Number of retry attempts on failure (default: 3)
+	 * @param {number} [options.RetryDelay] - Delay in ms between retries (default: 2000)
+	 * @param {number} [options.ExpireDuration] - Multipart upload expiry time in ms (default: 12 hours)
+	 * @param {number} [options.SingleConcurrency] - Concurrent single file operations (default: 40)
+	 * @param {number} [options.MultipartConcurrency] - Concurrent multipart operations (default: 10)
+	 * @param {boolean} [options.Verbose] - Enable verbose logging (default: true)
+	 * @throws {Error} When awsConfig is not provided
+	 */
 	constructor(awsConfig, options = {}) {
 		if (typeof awsConfig !== 'object') {
 			throw new Error('Please specify an aws config');
@@ -43,13 +64,25 @@ class S3Copier {
 		});
 	}
 
+	/**
+	 * Log messages if verbose mode is enabled
+	 * @private
+	 * @param {string} msg - Message to log
+	 */
 	log(msg) {
 		if (this.verbose) {
 			console.log(msg);
 		}
 	}
 
-	// Data validator
+	/**
+	 * Validate data type and constraints
+	 * @private
+	 * @param {*} data - Data to validate
+	 * @param {string} type - Expected type
+	 * @param {boolean} checkLength - Whether to check length > 0
+	 * @returns {boolean} True if valid
+	 */
 	isDataValid(data, type, checkLength) {
 		if (data == null) return false;
 		if (type != null && typeof data !== type) return false;
@@ -62,7 +95,12 @@ class S3Copier {
 		return true;
 	}
 
-	// Used for formatting the duration
+	/**
+	 * Format duration in HH:MM:SS.ms format
+	 * @param {number} start - Start timestamp in milliseconds
+	 * @param {number} stop - Stop timestamp in milliseconds
+	 * @returns {string} Formatted duration string
+	 */
 	getFormattedDuration(start, stop) {
 		const diff = parseInt((stop - start) / 1000);
 		let hh = '' + parseInt(diff / 3600);
@@ -74,6 +112,12 @@ class S3Copier {
 		       (ss.length > 1 ? ss : '0' + ss) + '.' + ms;
 	}
 
+	/**
+	 * Check if an item has already been copied
+	 * @private
+	 * @param {Object} cmParam - Copy parameters with Source, Destination, and Size
+	 * @returns {Promise<Object|null>} Object with message if already copied, null otherwise
+	 */
 	async isItemCopied(cmParam) {
 		try {
 			const command = new HeadObjectCommand({
@@ -95,6 +139,13 @@ class S3Copier {
 		}
 	}
 
+	/**
+	 * Get destination key path from source path
+	 * @private
+	 * @param {string} srcPath - Source path
+	 * @param {string} keyPath - Key path
+	 * @returns {string} Formatted key path
+	 */
 	getKeyPath(srcPath, keyPath) {
 		if (srcPath === '/') {
 			return keyPath;
@@ -103,6 +154,14 @@ class S3Copier {
 		return folders[folders.length - 1] + keyPath.substr(srcPath.length);
 	}
 
+	/**
+	 * List all objects in an S3 bucket with given prefix
+	 * @param {Object} lParam - List parameters
+	 * @param {string} lParam.Bucket - S3 bucket name
+	 * @param {string} lParam.Prefix - Object key prefix
+	 * @returns {Promise<Array>} Array of S3 objects
+	 * @throws {Error} When parameters are invalid
+	 */
 	async list(lParam) {
 		if (!this.isDataValid(lParam, 'object')) {
 			throw new Error('Invalid list param');
@@ -180,6 +239,14 @@ class S3Copier {
 		}
 	}
 
+	/**
+	 * Copy a single file (< 5GB) using standard S3 copyObject
+	 * @param {Object} csParam - Copy parameters
+	 * @param {Object} csParam.Source - Source bucket and key
+	 * @param {Object} csParam.Destination - Destination bucket and key
+	 * @param {number} csParam.Size - File size in bytes
+	 * @returns {Promise<Object>} Copy result
+	 */
 	async copySingle(csParam) {
 		const isCopied = await this.isItemCopied(csParam);
 		if (isCopied) {
@@ -207,6 +274,15 @@ class S3Copier {
 		}
 	}
 
+	/**
+	 * Copy a large file (>= 5GB) using multipart upload
+	 * @param {Object} cmParam - Copy parameters
+	 * @param {Object} cmParam.Source - Source bucket and key
+	 * @param {Object} cmParam.Destination - Destination bucket and key
+	 * @param {number} cmParam.Size - File size in bytes
+	 * @returns {Promise<Object>} Copy result
+	 * @throws {Error} When file requires more than 10,000 parts
+	 */
 	async copyMultipart(cmParam) {
 		const isCopied = await this.isItemCopied(cmParam);
 		if (isCopied) {
@@ -318,7 +394,14 @@ class S3Copier {
 		}
 	}
 
-	// Helper function to run tasks in parallel with a limit
+	/**
+	 * Execute tasks in parallel with concurrency limit
+	 * @private
+	 * @param {Array} items - Items to process
+	 * @param {number} limit - Maximum concurrent operations
+	 * @param {Function} iteratorFn - Function to execute for each item
+	 * @returns {Promise<Array>} Results from all operations
+	 */
 	async parallelLimit(items, limit, iteratorFn) {
 		const results = [];
 		const executing = [];
@@ -339,6 +422,32 @@ class S3Copier {
 		return Promise.all(results);
 	}
 
+	/**
+	 * Copy files, directories, or entire buckets between S3 locations
+	 * @param {Object|Array} cParam - Copy parameter(s). Can be single object or array of objects
+	 * @param {Object} cParam.Source - Source configuration
+	 * @param {string} cParam.Source.Bucket - Source bucket name
+	 * @param {string} cParam.Source.Key - Source key or prefix (use '/' for entire bucket)
+	 * @param {Object} cParam.Destination - Destination configuration
+	 * @param {string} cParam.Destination.Bucket - Destination bucket name
+	 * @param {string} [cParam.Destination.Prefix] - Destination prefix for multiple files
+	 * @param {string} [cParam.Destination.Key] - Destination key for single file/rename
+	 * @returns {Promise<string>} Success message
+	 * @throws {Error} When parameters are invalid
+	 * @example
+	 * // Copy single file
+	 * await s3Copier.copy({
+	 *   Source: { Bucket: 'source-bucket', Key: 'file.txt' },
+	 *   Destination: { Bucket: 'dest-bucket', Prefix: 'backup/' }
+	 * });
+	 *
+	 * @example
+	 * // Copy entire bucket
+	 * await s3Copier.copy({
+	 *   Source: { Bucket: 'source-bucket', Key: '/' },
+	 *   Destination: { Bucket: 'dest-bucket' }
+	 * });
+	 */
 	async copy(cParam) {
 		let copyArr = [];
 
