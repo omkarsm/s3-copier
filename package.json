@@ -1,6 +1,6 @@
 {
   "name": "s3-copier",
-  "version": "1.0.4",
+  "version": "2.0.0",
   "description": "S3 Copier is a module used for copy/transfer contents between S3 buckets.",
   "main": "s3.js",
   "scripts": {
@@ -30,8 +30,10 @@
     "url": "https://github.com/omkarsm/s3-copier/issues"
   },
   "homepage": "https://github.com/omkarsm/s3-copier#readme",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
-    "async": "^2.1.4",
-    "aws-sdk": "^2.10.0"
+    "@aws-sdk/client-s3": "^3.709.0"
   }
 }
