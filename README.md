@@ -2,9 +2,9 @@
 
 [![NPM Version](https://img.shields.io/npm/v/s3-copier.svg)](https://www.npmjs.com/package/s3-copier)
 [![CI](https://github.com/omkarsm/s3-copier/workflows/CI/badge.svg)](https://github.com/omkarsm/s3-copier/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/omkarsm/s3-copier/branch/main/graph/badge.svg)](https://codecov.io/gh/omkarsm/s3-copier)
+[![codecov](https://codecov.io/gh/omkarsm/s3-copier/graph/badge.svg?token=9666e2cc-d250-4d2f-b69c-a842e5e74785)](https://codecov.io/gh/omkarsm/s3-copier)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/node/v/s3-copier.svg)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen.svg)](https://nodejs.org)
 [![Downloads](https://img.shields.io/npm/dm/s3-copier.svg)](https://www.npmjs.com/package/s3-copier)
 
 S3 Copier module for copying contents between S3 buckets.
