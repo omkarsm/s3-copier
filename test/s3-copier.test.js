@@ -193,8 +193,28 @@ describe('S3Copier', () => {
 			expect(commandParams.Prefix).toBe('');
 		});
 
+		test('should list objects without Prefix parameter', async () => {
+			mockSend.mockResolvedValueOnce({
+				Contents: [
+					{ Key: 'file1.txt', Size: 100 },
+					{ Key: 'dir/file2.txt', Size: 200 }
+				],
+				IsTruncated: false
+			});
+
+			const result = await s3Copier.list({
+				Bucket: 'test-bucket'
+			});
+
+			expect(result).toHaveLength(2);
+			expect(result[0].Key).toBe('file1.txt');
+			expect(result[1].Key).toBe('dir/file2.txt');
+			const commandParams = mockSend.mock.calls[0][0].params;
+			expect(commandParams.Prefix).toBe('');
+		});
+
 		test('should throw error for invalid params', async () => {
-			await expect(s3Copier.list({})).rejects.toThrow('Invalid list param');
+			await expect(s3Copier.list({})).rejects.toThrow('Invalid list param: Bucket is required');
 		});
 	});
 

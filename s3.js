@@ -158,7 +158,7 @@ class S3Copier {
 	 * List all objects in an S3 bucket with given prefix
 	 * @param {Object} lParam - List parameters
 	 * @param {string} lParam.Bucket - S3 bucket name
-	 * @param {string} lParam.Prefix - Object key prefix
+	 * @param {string} [lParam.Prefix] - Object key prefix (optional, defaults to root)
 	 * @returns {Promise<Array>} Array of S3 objects
 	 * @throws {Error} When parameters are invalid
 	 */
@@ -166,12 +166,15 @@ class S3Copier {
 		if (!this.isDataValid(lParam, 'object')) {
 			throw new Error('Invalid list param');
 		}
-		if (!this.isDataValid(lParam.Bucket, 'string', true) ||
-		    !this.isDataValid(lParam.Prefix, 'string', true)) {
-			throw new Error('Invalid list param');
+		if (!this.isDataValid(lParam.Bucket, 'string', true)) {
+			throw new Error('Invalid list param: Bucket is required');
 		}
 
-		let prefix = lParam.Prefix === '/' ? '' : lParam.Prefix;
+		// Prefix is optional - can be undefined, null, empty string, or '/'
+		let prefix = '';
+		if (lParam.Prefix != null) {
+			prefix = lParam.Prefix === '/' ? '' : lParam.Prefix;
+		}
 		const finalSet = [];
 		let marker;
 
