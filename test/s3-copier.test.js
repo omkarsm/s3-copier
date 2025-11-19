@@ -474,6 +474,18 @@ describe('S3Copier', () => {
 				done();
 			});
 		});
+
+		test('should throw error when source file does not exist', async () => {
+			mockSend.mockResolvedValueOnce({ // list returns empty
+				Contents: [],
+				IsTruncated: false
+			});
+
+			await expect(s3Copier.copy({
+				Source: { Bucket: 'src', Key: 'non-existent.txt' },
+				Destination: { Bucket: 'dest', Prefix: 'backup/' }
+			})).rejects.toThrow('No files found at source. Key does not exist or is empty.');
+		});
 	});
 
 	describe('parallelLimit', () => {

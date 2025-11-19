@@ -535,6 +535,11 @@ class S3Copier {
 
 			this.log(`${copier.single.length + copier.multi_part.length} files are queued for copy`);
 
+			// Validate that at least one file was found
+			if (copier.single.length === 0 && copier.multi_part.length === 0) {
+				throw new Error('No files found at source. Key does not exist or is empty.');
+			}
+
 			// Copy single files with concurrency limit
 			if (copier.single.length > 0) {
 				await this.parallelLimit(

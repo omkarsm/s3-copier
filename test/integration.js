@@ -430,8 +430,10 @@ async function runIntegrationTests() {
 		testResults.failed++;
 		testResults.tests.push({ name: 'Copy error handling', status: 'FAIL' });
 	} catch (error) {
-		if (error.message && (error.message.includes('Key does not exist') || error.name === 'NoSuchKey')) {
-			logSuccess('Correctly threw error for non-existent source');
+		if (error.message && (error.message.includes('Key does not exist') ||
+		                      error.message.includes('No files found at source') ||
+		                      error.name === 'NoSuchKey')) {
+			logSuccess(`Correctly threw error: ${error.message}`);
 			testResults.passed++;
 			testResults.tests.push({ name: 'Copy error handling', status: 'PASS' });
 		} else {
