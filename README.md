@@ -274,6 +274,38 @@ const result = await s3Copier.copyMultipart({
 - ✅ **Large file support** - Handles files up to 5TB using multipart copy
 - ✅ **Modern JavaScript** - Built with ES6+, async/await, and Promises
 
+## Testing
+
+### Unit Tests
+Comprehensive unit test suite with 90% code coverage runs automatically on every PR/push:
+
+```bash
+npm test
+```
+
+### Integration Tests
+Integration tests validate real S3 operations but **do NOT run automatically**. They must be triggered manually:
+
+**Run locally:**
+```bash
+# Set environment variables first
+export AWS_ACCESS_KEY_ID="your-key"
+export AWS_SECRET_ACCESS_KEY="your-secret"
+export AWS_REGION="us-east-1"
+export TEST_BUCKET="your-bucket"
+
+# Run tests
+npm run test:integration
+```
+
+**Run via GitHub Actions:**
+1. Go to Actions tab → Integration Tests workflow
+2. Click "Run workflow"
+3. Enter bucket name and region
+4. View results in workflow run
+
+📖 **Full guide:** See [INTEGRATION_TESTS.md](INTEGRATION_TESTS.md) for detailed instructions
+
 ## AWS Permissions Required
 
 Your AWS credentials need the following S3 permissions:

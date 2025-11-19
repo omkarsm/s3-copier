@@ -1,0 +1,61 @@
+name: Integration Tests
+
+# Only run manually via workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      test_bucket:
+        description: 'S3 bucket name to test against'
+        required: true
+        default: 'omkar-bucket'
+      aws_region:
+        description: 'AWS region'
+        required: true
+        default: 'us-east-1'
+        type: choice
+        options:
+          - us-east-1
+          - us-east-2
+          - us-west-1
+          - us-west-2
+          - eu-west-1
+          - eu-central-1
+          - ap-south-1
+          - ap-southeast-1
+          - ap-northeast-1
+
+jobs:
+  integration-test:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ inputs.aws_region }}
+          TEST_BUCKET: ${{ inputs.test_bucket }}
+        run: npm run test:integration
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            *.log
+          retention-days: 7
+          if-no-files-found: ignore

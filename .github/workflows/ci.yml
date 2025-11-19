@@ -1,5 +1,9 @@
 name: CI
 
+# This workflow runs UNIT TESTS ONLY (Jest)
+# Integration tests are run separately via workflow_dispatch
+# See .github/workflows/integration-tests.yml for integration testing
+#
 # This workflow runs on:
 # - Pull requests targeting main, master, or develop
 # - Pushes to main, master, or develop branches

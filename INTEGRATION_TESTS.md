@@ -2,17 +2,29 @@
 
 This guide explains how to run integration tests against real AWS S3 infrastructure.
 
+## Two Ways to Run Integration Tests
+
+1. **Locally** - Run on your machine with environment variables
+2. **GitHub Actions** - Manually trigger via workflow dispatch
+
 ## Prerequisites
 
-1. **AWS Credentials** with S3 read permissions
+1. **AWS Credentials** with S3 read permissions (and write for copy tests)
 2. **S3 Bucket** to test against (e.g., `omkar-bucket`)
-3. **Node.js 24+** installed
+3. **Node.js 24+** installed (for local testing)
 
 ## Security Notice
 
-⚠️ **Your AWS credentials will only be used locally on your machine. They are never committed to git or shared.**
+⚠️ **Integration tests do NOT run automatically in CI/CD pipelines**
+- Unit tests run automatically on every PR/push
+- Integration tests must be triggered manually
+- AWS credentials are only used when you explicitly run them
 
-## Setup
+---
+
+## Method 1: Run Locally
+
+### Setup
 
 ### Step 1: Set Environment Variables
 
@@ -193,6 +205,60 @@ Success Rate: 100.0%
   ]
 }
 ```
+
+---
+
+## Method 2: Run via GitHub Actions (Manual Trigger)
+
+Integration tests can be run directly on GitHub Actions without setting up locally.
+
+### Step 1: Set Up AWS Credentials in GitHub Secrets
+
+1. Go to your repository: `https://github.com/omkarsm/s3-copier`
+2. Click `Settings` → `Secrets and variables` → `Actions`
+3. Add the following secrets:
+   - `AWS_ACCESS_KEY_ID` - Your AWS access key
+   - `AWS_SECRET_ACCESS_KEY` - Your AWS secret key
+
+### Step 2: Trigger the Integration Test Workflow
+
+1. Go to the **Actions** tab in your GitHub repository
+2. Click on **"Integration Tests"** workflow in the left sidebar
+3. Click **"Run workflow"** button (on the right)
+4. Fill in the inputs:
+   - **S3 bucket name**: e.g., `omkar-bucket`
+   - **AWS region**: Select from dropdown (e.g., `us-east-1`)
+5. Click **"Run workflow"** green button
+
+### Step 3: View Results
+
+1. The workflow will appear in the workflow runs list
+2. Click on the run to see detailed logs
+3. Expand each step to see test output
+4. All test results will be displayed with ✓ PASS/✗ FAIL/⊘ SKIP status
+
+### Benefits of GitHub Actions Method
+
+- ✅ No local setup required
+- ✅ Runs in clean environment every time
+- ✅ Credentials stored securely in GitHub Secrets
+- ✅ Test results saved in workflow artifacts
+- ✅ Can be run by team members with repository access
+
+### Workflow File Location
+
+The integration test workflow is defined in:
+```
+.github/workflows/integration-tests.yml
+```
+
+This workflow:
+- Only runs when manually triggered (workflow_dispatch)
+- Never runs automatically on push/PR
+- Uses GitHub Secrets for AWS credentials
+- Accepts bucket name and region as inputs
+
+---
 
 ## Cleanup
 
