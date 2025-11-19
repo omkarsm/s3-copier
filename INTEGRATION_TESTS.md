@@ -57,6 +57,7 @@ node test/integration.js
 
 The integration test suite will verify:
 
+### List API Tests:
 1. ✅ **List entire bucket** - List all objects without prefix
 2. ✅ **List with root prefix** - List objects with "/" prefix
 3. ✅ **List with empty prefix** - List objects with "" prefix
@@ -65,12 +66,26 @@ The integration test suite will verify:
 6. ✅ **Parameter validation** - Missing required parameters
 7. ✅ **Performance** - Response time and pagination
 
-## Read-Only Testing
+### Copy API Tests:
+8. ✅ **Copy single file** - Copy and verify file
+9. ✅ **Duplicate detection** - Skip already copied files
+10. ✅ **Copy error handling** - Non-existent source files
+11. ✅ **Cleanup** - Remove test files after testing
 
-**Important:** These tests are **READ-ONLY**. They will:
-- ✅ List objects from your bucket
-- ✅ Read object metadata
-- ❌ NOT create, modify, or delete any objects
+## Testing Modes
+
+**The integration test has two modes:**
+
+### Read-Only Mode (No files in bucket)
+- Tests 1-7 will run (list operations only)
+- Tests 8-11 will be skipped
+- No modifications to your bucket
+
+### Full Mode (Files exist in bucket)
+- All tests 1-11 will run
+- Creates temporary test files (*.copy-test, *.dup-test)
+- Automatically cleans up test files after completion
+- Requires write permissions (`s3:PutObject`, `s3:DeleteObject`)
 
 ## Expected Output
 
@@ -135,8 +150,7 @@ Success Rate: 100.0%
 
 ## Required IAM Permissions
 
-Your AWS credentials need at minimum:
-
+### For Read-Only Tests (List API only):
 ```json
 {
   "Version": "2012-10-17",
@@ -147,6 +161,29 @@ Your AWS credentials need at minimum:
         "s3:ListBucket",
         "s3:GetObject",
         "s3:GetObjectMetadata"
+      ],
+      "Resource": [
+        "arn:aws:s3:::omkar-bucket",
+        "arn:aws:s3:::omkar-bucket/*"
+      ]
+    }
+  ]
+}
+```
+
+### For Full Tests (List + Copy APIs):
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetObject",
+        "s3:GetObjectMetadata",
+        "s3:PutObject",
+        "s3:DeleteObject"
       ],
       "Resource": [
         "arn:aws:s3:::omkar-bucket",
