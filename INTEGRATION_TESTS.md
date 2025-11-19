@@ -50,7 +50,7 @@ npm run test:integration
 
 Or run directly:
 ```bash
-node test/integration.test.js
+node test/integration.js
 ```
 
 ## What Gets Tested

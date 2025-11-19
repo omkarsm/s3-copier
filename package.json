@@ -7,7 +7,7 @@
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
-    "test:integration": "node test/integration.test.js"
+    "test:integration": "node test/integration.js"
   },
   "repository": {
     "type": "git",

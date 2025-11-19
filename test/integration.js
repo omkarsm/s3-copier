@@ -12,7 +12,7 @@
  *    export AWS_REGION="us-east-1"
  *    export TEST_BUCKET="omkar-bucket"
  *
- * 2. Run with: node test/integration.test.js
+ * 2. Run with: node test/integration.js
  *
  * Note: These tests will NOT modify your bucket, only read from it.
  */
@@ -61,7 +61,7 @@ function validateEnvironment() {
 		log('  export AWS_SECRET_ACCESS_KEY="your-secret-access-key"', 'cyan');
 		log('  export AWS_REGION="us-east-1"', 'cyan');
 		log('  export TEST_BUCKET="omkar-bucket"', 'cyan');
-		log('\nThen run: node test/integration.test.js\n', 'yellow');
+		log('\nThen run: node test/integration.js\n', 'yellow');
 		process.exit(1);
 	}
 
